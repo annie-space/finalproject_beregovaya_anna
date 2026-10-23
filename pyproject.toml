@@ -1,0 +1,27 @@
+[project]
+name = "finalproject-beregovaya-anna"
+version = "0.1.0"
+description = "description"
+readme = "README.md"
+authors = [
+    { name = "anika_brgv", email = "anna.beregovay@yandex.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "prettytable>=3.18.0",
+    "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.2",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = ["venv", ".venv", "dist", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
