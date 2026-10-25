@@ -202,14 +202,54 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Точка входа CLI."""
+    """Точка входа CLI.
+
+    Без аргументов — интерактивный REPL (сессия сохраняется).
+    С аргументами — одна команда и выход.
+    """
+    if argv is None and len(sys.argv) > 1:
+        argv = sys.argv[1:]
+
+    if argv:
+        parser = _build_parser()
+        args = parser.parse_args(argv)
+        try:
+            return args.func(args)
+        except ValutaTradeError as exc:
+            _print_error(str(exc))
+            return 1
+
+    return _repl()
+
+
+def _repl() -> int:
+    """Интерактивный режим: команды вводятся по одной, сессия живёт."""
     parser = _build_parser()
-    args = parser.parse_args(argv)
-    try:
-        return args.func(args)
-    except ValutaTradeError as exc:
-        _print_error(str(exc))
-        return 1
+    print("ValutaTrade Hub. Введите 'help' или 'exit'.")
+    while True:
+        try:
+            line = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not line:
+            continue
+        if line in ("exit", "quit"):
+            break
+        if line == "help":
+            parser.print_help()
+            continue
+        try:
+            args = parser.parse_args(line.split())
+        except SystemExit:
+            continue
+        try:
+            args.func(args)
+        except ValutaTradeError as exc:
+            _print_error(str(exc))
+        except Exception as exc:
+            _print_error(f"{type(exc).__name__}: {exc}")
+    return 0
 
 
 if __name__ == "__main__":
