@@ -10,11 +10,15 @@ from valutatrade_hub.core.exceptions import (
     InsufficientFundsError,
     ValutaTradeError,
 )
+from valutatrade_hub.parser_service.storage import RatesStorage
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 
 def _print_error(message: str) -> None:
     print(f"Ошибка: {message}")
 
+
+# ---------- Core-команды ----------
 
 def cmd_register(args: argparse.Namespace) -> int:
     try:
@@ -165,8 +169,86 @@ def cmd_get_rate(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------- Parser-команды ----------
+
+def cmd_update_rates(args: argparse.Namespace) -> int:
+    """Обновляет курсы из внешних API."""
+    try:
+        updater = RatesUpdater()
+        result = updater.run_update(source=args.source)
+    except Exception as exc:
+        _print_error(f"{type(exc).__name__}: {exc}")
+        return 1
+
+    if result["updated"] == 0:
+        print("Не удалось обновить курсы.")
+        for err in result["errors"]:
+            print(f"  - {err}")
+        return 1
+
+    print(f"Обновлено курсов: {result['updated']}")
+    print(f"Последнее обновление: {result['last_refresh']}")
+    if result["errors"]:
+        print("Предупреждения:")
+        for err in result["errors"]:
+            print(f"  - {err}")
+    return 0
+
+
+def cmd_show_rates(args: argparse.Namespace) -> int:
+    """Показывает кэш курсов из rates.json."""
+    storage = RatesStorage()
+    data = storage.load_rates()
+    pairs = data.get("pairs", {})
+    last_refresh = data.get("last_refresh", "—")
+
+    if not pairs:
+        print("Локальный кеш курсов пуст. Выполните 'update-rates'.")
+        return 0
+
+    if args.currency:
+        code = args.currency.upper()
+        filtered = {
+            pair: info
+            for pair, info in pairs.items()
+            if pair.startswith(f"{code}_") or pair.endswith(f"_{code}")
+        }
+        if not filtered:
+            _print_error(f"Курс для '{code}' не найден в кеше")
+            return 1
+        pairs = filtered
+
+    if args.base:
+        base = args.base.upper()
+        filtered = {
+            pair: info
+            for pair, info in pairs.items()
+            if pair.endswith(f"_{base}")
+        }
+        if not filtered:
+            _print_error(f"Курсы с базой '{base}' не найдены")
+            return 1
+        pairs = filtered
+
+    items = list(pairs.items())
+    if args.top:
+        items.sort(key=lambda kv: kv[1]["rate"], reverse=True)
+        items = items[: args.top]
+    else:
+        items.sort(key=lambda kv: kv[0])
+
+    print(f"Курсы из кеша (обновлено: {last_refresh}):")
+    for pair, info in items:
+        print(f"- {pair}: {info['rate']}")
+    return 0
+
+
+# ---------- Парсер ----------
+
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="valutatrade", description="ValutaTrade Hub")
+    parser = argparse.ArgumentParser(
+        prog="valutatrade", description="ValutaTrade Hub"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("register", help="Регистрация")
@@ -198,8 +280,25 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--to", dest="to_code", required=True)
     p.set_defaults(func=cmd_get_rate)
 
+    p = sub.add_parser("update-rates", help="Обновить курсы из API")
+    p.add_argument(
+        "--source",
+        choices=["coingecko", "exchangerate"],
+        default=None,
+        help="Обновить только указанный источник",
+    )
+    p.set_defaults(func=cmd_update_rates)
+
+    p = sub.add_parser("show-rates", help="Показать кеш курсов")
+    p.add_argument("--currency", default=None)
+    p.add_argument("--top", type=int, default=None)
+    p.add_argument("--base", default=None)
+    p.set_defaults(func=cmd_show_rates)
+
     return parser
 
+
+# ---------- Точки входа ----------
 
 def main(argv: list[str] | None = None) -> int:
     """Точка входа CLI.
