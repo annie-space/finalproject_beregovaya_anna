@@ -1,0 +1,11 @@
+[
+  {
+    "id": "BTC_USD_2026-10-25T20:00:00+00:00",
+    "from_currency": "BTC",
+    "to_currency": "USD",
+    "rate": 90000.0,
+    "timestamp": "2026-10-25T20:00:00+00:00",
+    "source": "test",
+    "meta": {}
+  }
+]
