@@ -34,5 +34,32 @@
     "timestamp": "2026-10-25T17:27:15+00:00",
     "source": "CoinGecko",
     "meta": {}
+  },
+  {
+    "id": "BTC_USD_2026-10-25T17:29:53+00:00",
+    "from_currency": "BTC",
+    "to_currency": "USD",
+    "rate": 80669.0,
+    "timestamp": "2026-10-25T17:29:53+00:00",
+    "source": "CoinGecko",
+    "meta": {}
+  },
+  {
+    "id": "ETH_USD_2026-10-25T17:29:53+00:00",
+    "from_currency": "ETH",
+    "to_currency": "USD",
+    "rate": 2355.05,
+    "timestamp": "2026-10-25T17:29:53+00:00",
+    "source": "CoinGecko",
+    "meta": {}
+  },
+  {
+    "id": "SOL_USD_2026-10-25T17:29:53+00:00",
+    "from_currency": "SOL",
+    "to_currency": "USD",
+    "rate": 101.8,
+    "timestamp": "2026-10-25T17:29:53+00:00",
+    "source": "CoinGecko",
+    "meta": {}
   }
 ]
